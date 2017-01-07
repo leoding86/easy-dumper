@@ -127,6 +127,9 @@ class Video extends Post implements \ISaveable
         }
 
         try {
+            $resource_uri = $video_info['url'];
+            $save_name = $this->id . '.' . $video_info['type'];
+
             /**
              * 创建一个下载任务并检查任务是否完成过
              * 如果是新的则添加一条任务记录
@@ -138,14 +141,7 @@ class Video extends Post implements \ISaveable
             $downloadTask->addRecord();
 
             /* 开始下载 */
-            $downloader = new \Common\Downloader(
-                md5($video_info['url']),
-                $save_dir,
-                $this->blogName . '-' . $this->id . '.' . $video_info['type'],
-                $video_info['url'],
-                [],
-                $this->downloadOptions
-            );
+            $downloader = new \Common\Downloader($downloadTask, [], $this->downloadOptions);
             $downloader->setChunkSize(1024 * 1024);
             $this->dispatch(self::BEFORE_DOWNLOAD_EVENT, [&$downloader]);
             $downloader->start();
