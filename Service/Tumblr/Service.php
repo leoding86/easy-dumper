@@ -78,7 +78,7 @@ class Service extends \Common\Service
         }
 
         $save_dir = $this->saveDir . $post_id . '/';
-        if (mkdir($save_dir) === false) {
+        if (!is_dir($save_dir) && mkdir($save_dir) === false) {
             throw new \Exception("Cannot create folder for saving post [" . $save_dir . "]");
         }
 
@@ -89,20 +89,29 @@ class Service extends \Common\Service
     {
         $retry_times = $this->retryTimes;
         while ($retry_times-- > 0) {
+            $posts = null;
             try {
                 $posts = $this->tumblr->setParams($params)->posts($blog, $this->getType());
                 if ($posts == null) {
                     Helper::println('Get posts error, skip');
-                    yield;
+                    yield null;
                 }
             } catch (\Exception $e) {
                 Helper::println($e->getMessage() . ', retry.');
 
                 if ($retry_times <= 0) {
                     Helper::println('Out of retry times, skip');
-                    yield;
+                    yield null;
                 }
             }
+        }
+
+        /**
+         * 遍历前检查posts是否有效
+         */
+        if (is_null($posts)) {
+            Helper::println('Has no post');
+            yield null;
         }
 
         foreach ($posts->posts as $p) {
@@ -183,7 +192,7 @@ class Service extends \Common\Service
 
                     $save_dir = $this->createPostSaveFolder($post->id); // 创建保存post的文件夹
                     $post->setDownloadOptions($this->tumblr->options);
-                    $post->registerHook(Post::BEFORE_DOWNLOAD, [$this, 'beforeDownloadHandler']);
+                    $post->registerHook(Post::BEFORE_DOWNLOAD_EVENT, [$this, 'beforeDownloadHandler']);
 
                     /**
                      * 创建一个任务并提交
