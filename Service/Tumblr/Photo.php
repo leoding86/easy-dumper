@@ -1,6 +1,9 @@
 <?php
 namespace Service\Tumblr;
 
+use Common\DumperException;
+use Webmozart\PathUtil\Path;
+
 class Photo extends Post implements \ISaveable
 {
     public $photos      = null;
@@ -14,7 +17,19 @@ class Photo extends Post implements \ISaveable
      */
     private function saveAsHtml()
     {
-        
+        $photos_relative_paths = [];
+        foreach ($this->savedPhotos as $photo) {
+            $photos_relative_paths[] = Path::makeRelative($photo, $this->saveDir);
+        }
+
+        $template = new \Common\Template();
+        $template->setTemplate('Photo')
+                 ->assign('photos', $photos_relative_paths)
+                 ->assign('caption', $this->caption)
+                 ->render();
+        $html_handle = fopen($this->saveDir . '/index.html', 'w');
+        fwrite($html_handle, $template->getContent());
+        fclose($html_handle);
     }
 
     public function __construct(
@@ -56,7 +71,7 @@ class Photo extends Post implements \ISaveable
         $this->caption     = $caption;
     }
 
-    public function download($save_dir)
+    public function download()
     {
         $count = 0;
         foreach ($this->resourcesUri() as $resource_uri) {
@@ -76,30 +91,33 @@ class Photo extends Post implements \ISaveable
                  * 创建一个下载任务并检查任务是否完成过
                  * 如果是新的则添加一条任务记录
                  */
-                $downloadTask = new \Common\DownloadTask(md5($resource_uri), $save_dir, $save_name, $resource_uri);
+                $downloadTask = new \Common\DownloadTask(md5($resource_uri), $this->saveDir, $save_name, $resource_uri);
                 if ($downloadTask->isDone()) {
                     $downloadTask = null;
                     unset($downloadTask);
                     continue;
                 }
-                $downloadTask->addRecord();
+                $downloadTask->addRecord(); // 添加任务记录
 
-                $downloader = new \Common\Downloader($downloadTask, [], $this->downloadOptions);
+                $downloader = new \Common\Downloader($downloadTask, [], $this->downloadOptions); // 创建下载任务
 
                 $this->dispatch(self::BEFORE_DOWNLOAD_EVENT, [&$downloader]);
                 $downloader->start();
                 $this->savedPhotos[] = $downloader->getSavedFile();
-            } catch (\Exception $e) { // 下载失败
-                throw new \Exception($e->getMessage());
-            }
 
-            $downloadTask->markDone();
+                $downloadTask->markDone(); // 标记任务完成
+            } catch (\Common\DownloadTaskException $e) { // 任务实例错误，添加任务或标记任务异常
+                // Do nothing
+            } catch (\Exception $e) { // 发生错误
+                throw new DumperException($e->getMessage());
+            }
         }
+        $this->saveAsHtml();
     }
 
     public function save($service)
     {
-        throw new \Exception("Not implements", 1);
+        throw new DumperException("Not implements", 1);
     }
 
     public function resourcesUri()

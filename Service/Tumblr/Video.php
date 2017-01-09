@@ -1,10 +1,13 @@
 <?php
 namespace Service\Tumblr;
 
-use \Requests;
+use Common\DumperException;
+use Requests;
+use Webmozart\PathUtil\Path;
 
 class Video extends Post implements \ISaveable
 {
+    private $savedVideo = null;
     public $player   = null;
     public $videoUrl = null;
     public $caption  = null;
@@ -18,8 +21,8 @@ class Video extends Post implements \ISaveable
             'vimeo'     => null,
 
             /**
-             * <video  id='embed-583fca6023862368590190' class='crt-video crt-skin-default' width='250' height='141' poster='https://68.media.tumblr.com/tumblr_ohabsuZUDi1rdkpu1_smart1.jpg' preload='none' muted data-crt-video data-crt-options='{"autoheight":null,"duration":30,"hdUrl":"https:\/\/api.tumblr.com\/video_file\/t:cyleRWsXtpWY5LrNY871cA\/153810401050\/tumblr_ohabsuZUDi1rdkpu1","filmstrip":{"url":"https:\/\/66.media.tumblr.com\/previews\/tumblr_ohabsuZUDi1rdkpu1_filmstrip.jpg","width":"200","height":"112"}}' >
-             *     <source src="https://api.tumblr.com/video_file/t:cyleRWsXtpWY5LrNY871cA/153810401050/tumblr_ohabsuZUDi1rdkpu1/480" type="video/mp4">
+             * <video  id='***' class='crt-video crt-skin-default' width='250' height='141' poster='***' preload='none' muted data-crt-video data-crt-options='{"autoheight":null,"duration":30,"hdUrl":"***","filmstrip":{"url":"***","width":"200","height":"112"}}' >
+             *     <source src="https://api.tumblr.com/video_file/***" type="video/mp4">
              * </video>
              */
             'Tumblr'    => '/api\.tumblr\.com\/video_file/',
@@ -55,7 +58,16 @@ class Video extends Post implements \ISaveable
      */
     private function saveAsHtml()
     {
+        $video_relative_path = Path::makeRelative($this->savedVideo, $this->saveDir);
 
+        $template = new \Common\Template();
+        $template->setTemplate('Video')
+                 ->assign('video', $video_relative_path)
+                 ->assign('caption', $this->caption)
+                 ->render();
+        $html_handle = fopen($this->saveDir . '/index.html', 'w');
+        fwrite($html_handle, $template->getContent());
+        fclose($html_handle);
     }
 
     private function parseTumblrVideoInfo()
@@ -118,7 +130,7 @@ class Video extends Post implements \ISaveable
         $this->caption     = $caption;
     }
 
-    public function download($save_dir)
+    public function download()
     {
         $video_info = $this->getVideoInfo();
 
@@ -134,7 +146,7 @@ class Video extends Post implements \ISaveable
              * 创建一个下载任务并检查任务是否完成过
              * 如果是新的则添加一条任务记录
              */
-            $downloadTask = new \Common\DownloadTask(md5($resource_uri), $save_dir, $save_name, $resource_uri);
+            $downloadTask = new \Common\DownloadTask(md5($resource_uri), $this->saveDir, $save_name, $resource_uri);
             if ($downloadTask->isDone()) {
                 return;
             }
@@ -145,9 +157,10 @@ class Video extends Post implements \ISaveable
             $downloader->setChunkSize(1024 * 1024);
             $this->dispatch(self::BEFORE_DOWNLOAD_EVENT, [&$downloader]);
             $downloader->start();
+            $this->savedVideo = $downloader->getSavedFile();
             $this->saveAsHtml();
         } catch (\Exception $e) { // 下载失败
-            throw new \Exception($e->getMessage());
+            throw new DumperException($e->getMessage());
         }
 
         $downloadTask->markDone();
@@ -155,6 +168,6 @@ class Video extends Post implements \ISaveable
 
     public function save($service)
     {
-        throw new \Exception("Not implements", 1);
+        throw new DumperException("Not implements", 1);
     }
 }
