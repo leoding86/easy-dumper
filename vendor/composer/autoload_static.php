@@ -7,6 +7,11 @@ namespace Composer\Autoload;
 class ComposerStaticInit9581777fe0d2f500612a016de16719e4
 {
     public static $prefixLengthsPsr4 = array (
+        'W' => 
+        array (
+            'Webmozart\\PathUtil\\' => 19,
+            'Webmozart\\Assert\\' => 17,
+        ),
         'A' => 
         array (
             'Aura\\Sql\\' => 9,
@@ -14,6 +19,14 @@ class ComposerStaticInit9581777fe0d2f500612a016de16719e4
     );
 
     public static $prefixDirsPsr4 = array (
+        'Webmozart\\PathUtil\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/webmozart/path-util/src',
+        ),
+        'Webmozart\\Assert\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/webmozart/assert/src',
+        ),
         'Aura\\Sql\\' => 
         array (
             0 => __DIR__ . '/..' . '/aura/sql/src',

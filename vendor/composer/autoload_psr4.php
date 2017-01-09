@@ -6,5 +6,7 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Webmozart\\PathUtil\\' => array($vendorDir . '/webmozart/path-util/src'),
+    'Webmozart\\Assert\\' => array($vendorDir . '/webmozart/assert/src'),
     'Aura\\Sql\\' => array($vendorDir . '/aura/sql/src'),
 );
