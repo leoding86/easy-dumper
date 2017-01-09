@@ -1,7 +1,7 @@
 <?php
 namespace Service\Tumblr;
 
-use \Common\Helper;
+use Common\Helper;
 
 class DownloadWork extends \Threaded
 {
@@ -18,7 +18,7 @@ class DownloadWork extends \Threaded
     public function run()
     {
         try {
-            $this->post->download($this->saveDir);
+            $this->post->setSaveDir($this->saveDir)->download();
         } catch (\Exception $e) {
             Helper::println($e->getMessage());
         }
