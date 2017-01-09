@@ -54,7 +54,7 @@ class DownloadTask
     }
 }
 
-class DownloadTaskException extends \Exception
+class DownloadTaskException extends DumperException
 {
 
 }
