@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF8">
+    <meta name="description" content="The HTML5 Herald">
+    <meta name="author" content="SitePoint">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>untitled</title>
+
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+    <![endif]-->
+    <style>
+    * {margin:0; padding:0;}
+    a {text-decoration: none;}
+    .fl {float:left;}
+    .fr {float:right;}
+    #container {width:480px; margin:10px auto;}
+    .box {width:100%; border-radius: 5px; box-shadow: 0px 2px 0px #ccc; overflow: hidden;}
+    .posts .item {margin:10px 0;}
+    .posts .content {padding:8px;background:#eee;}
+    .posts .content a {color: #555;}
+    .posts .content a:hover {color: #333;}
+    .posts .content a:visited {color: #999;}
+    </style>
+</head>
+<body>
+<div id="container">
+    <div class="posts">
+        <?php foreach ($posts as $post) : ?>
+
+        <div class="item box">
+            <div class="content">
+                <a href="#<?php echo $post['url']; ?>"><span class="fr"><?php echo $post['count']; ?></span><span><?php echo $post['type']; ?></span></a>
+            </div>
+        </div>
+        <?php endforeach; ?>
+
+    </div>
+</div>
+</body>
+</html>
