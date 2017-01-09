@@ -1,6 +1,8 @@
 <?php
 namespace Service\Tumblr;
 
+use Common\DumperException;
+
 class Api
 {
     const API_BASE     = 'https://api.tumblr.com/';
@@ -112,7 +114,7 @@ class Api
     }
 }
 
-class ApiException extends \Exception
+class ApiException extends DumperException
 {
 
 }
