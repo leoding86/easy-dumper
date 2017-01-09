@@ -1,11 +1,14 @@
 <?php
 namespace Service\Tumblr;
 
+use Common\DumperException;
+
 class Post implements \ISaveable
 {
     const BEFORE_DOWNLOAD_EVENT = 1;
 
-    private $downloadOptions = [];
+    protected $downloadOptions = [];
+    protected $saveDir = null;
 
     public $blogName    = null;
     public $id          = null;
@@ -59,19 +62,25 @@ class Post implements \ISaveable
         return $this->$name;
     }
 
+    public function setSaveDir($save_dir)
+    {
+        $this->saveDir = $save_dir;
+        return $this;
+    }
+
     public function setDownloadOptions($options)
     {
         $this->downloadOptions = $options;
     }
 
-    public function download($save_path)
+    public function download()
     {
-        throw new \Exception("Not implements", 1);
+        throw new DumperException("Not implements", 1);
     }
 
     public function save($service)
     {
-        throw new \Exception("Not implements", 1);
+        throw new DumperException("Not implements", 1);
     }
 
     private $events = [];
