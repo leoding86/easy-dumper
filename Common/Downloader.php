@@ -38,7 +38,7 @@ class Downloader
     {
         /* 再次检查保存目录，方式目录意外删除 */
         if (!is_dir($this->saveDir)) {
-            throw new \Exception('save_dir is missing', 1);
+            throw new DumperException('save_dir is missing', 1);
         }
 
         if (is_file($this->saveFile) && filesize($this->saveFile) > 0) {
@@ -85,7 +85,7 @@ class Downloader
     public function setSaveDir($save_dir)
     {
         if (!is_dir($save_dir)) {
-            throw new \Exception('Invalid save_dir', 1);
+            throw new DumperException('Invalid save_dir', 1);
         }
         $this->saveDir = str_replace('\\', '/', $save_dir);
 
@@ -99,7 +99,7 @@ class Downloader
     public function setSaveName($save_name)
     {
         if (empty($save_name)) {
-            throw new \Exception('save_name cannot be empty', 1);
+            throw new DumperException('save_name cannot be empty', 1);
         }
 
         if (($pos = strrpos($save_name, '.')) >= 0) {
@@ -171,6 +171,7 @@ class Downloader
             if ($this->isSaveFileExists()) {
                 if ($this->saveMode === self::SKIP_MODE) {
                     $this->dispatch(self::COMPLETE_EVENT, [$this->jobId, true]);
+                    $this->savedFile = $this->saveFile;
                     return;
                 } else if ($this->saveMode === self::REPLACE_MODE) {
                     $filename = $this->saveFile;
@@ -186,7 +187,7 @@ class Downloader
                 try {
                     $request = \Requests::head($this->resourceUri, $this->headers, $this->options);
                     if ($request->status_code != 200) {
-                        throw new \Exception('Cannot get resource head');
+                        throw new DumperException('Cannot get resource head');
                     }
                     $size = $request->headers['content-length'];
                     $this->dispatch(self::BEFORE_EVENT, [$this->jobId, $size, $this->resourceUri]);
@@ -220,7 +221,7 @@ class Downloader
                             fwrite($file_handle, $request->body);
                             $this->retry(true);
                         } else {
-                            throw new \Exception('Some part of the resource is not downloaded');
+                            throw new DumperException('Some part of the resource is not downloaded');
                         }
                         unset($request);
                         break;
