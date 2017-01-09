@@ -1,5 +1,9 @@
 <?php
 define('ROOT', str_replace('\\', '/', __DIR__));
+define('RUNTIME', ROOT . '/Runtime');
+define('DB', ROOT . '/Db');
+define('DUMPED', ROOT . '/Dumped');
+define('TEMPLATE', ROOT . '/Template');
 
 require './vendor/autoload.php';
 require './Autoloader.php';
