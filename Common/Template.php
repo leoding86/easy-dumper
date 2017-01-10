@@ -9,7 +9,7 @@ namespace Common
         private $templateExt  = '';
         private $content      = '';
 
-        public function __construct($template_path = null, $template_ext = '.html')
+        public function __construct($template_path = null, $template_ext = '.tpl')
         {
             $this->templatePath = is_null($template_path) ?
                                   (TEMPLATE . '/' . SERVICE ) : str_replace('\\', '/', $template_path);

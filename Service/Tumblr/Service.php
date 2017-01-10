@@ -177,7 +177,7 @@ class Service extends \Common\Service
      * 
      * @return void
      */
-    private function createEntryPage()
+    private function createEntryPage(/*string*/$blog)
     {
         $directory = new \Common\Directory($this->saveDir);
         $directories = $directory->getDirectories();
@@ -206,6 +206,7 @@ class Service extends \Common\Service
 
         $template = new \Common\Template();
         $template->setTemplate('entry')
+                 ->assign('blog', $blog)
                  ->assign('posts', $posts)
                  ->render();
         $html_handle = fopen($this->saveDir . '/index.html', 'w');
@@ -273,19 +274,20 @@ class Service extends \Common\Service
 
             $pool->process(); // 同步所有任务
             $pool->shutdown();
-            Helper::println('Create ' . $blog . ' entry page file');
-            $this->createEntryPage();
+            Helper::println('Dump complete, build entry page file for ' . $blog);
+            $this->createEntryPage($blog);
+            Helper::println('Entry page file for ' . $blog . ' is complete');
         }
-        Helper::printlnExit('Completed!');
+        Helper::printlnExit('All done');
     }
 
     public function build()
     {
         foreach ($this->blogs as $blog) {
             $this->createBlogSaveFolder($blog);
-            Helper::println('Create ' . $blog . ' entry page file');
-            $this->createEntryPage();
-            Helper::printlnExit('Completed!');
+            Helper::println('Build entry page file for ' . $blog);
+            $this->createEntryPage($blog);
+            Helper::printlnExit('All done');
         }
     }
 

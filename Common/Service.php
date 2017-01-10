@@ -29,6 +29,10 @@ abstract class Service
             $this->args[$name] = $value;
         }
 
+        /**
+         * 处理保存根路径
+         * 如果不存在则尝试创建目录
+         */
         if (isset($this->args['s'])) {
             $this->saveRootDir = str_replace('\\', '/', $this->args['s']);
             if (substr($this->saveRootDir, -1) === '/') {
@@ -36,6 +40,9 @@ abstract class Service
             }
         } else {
             $this->saveRootDir = DUMPED . '/' . SERVICE;
+        }
+        if (!is_dir($this->saveRootDir) && mkdir($this->saveRootDir) === false) {
+            Helper::printlnExit('Invalid saveRootDir ' . $this->saveRootDir);
         }
 
         if (isset($this->args['p'])) {
