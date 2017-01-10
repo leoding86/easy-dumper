@@ -74,6 +74,11 @@ namespace Common
 
             return $directories;
         }
+
+        static public function mkdir($dir)
+        {
+
+        }
     }
 
     class DirectoryException extends DumperException
