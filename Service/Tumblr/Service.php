@@ -11,61 +11,18 @@ define('SERVICE', 'Tumblr'); // 定义服务名称
 
 class Service extends \Common\Service
 {
-    private $tumblr  = null;
-    private $saveDir = null;
-    private $apiKey  = null;
-    private $action  = null;
-    private $blogs   = [];
-    private $postType = null; 
-    protected $argsValidation = [
+    private $tumblr   = null;
+    private $saveDir  = null;
+    private $apiKey   = null;
+    private $action   = null;
+    private $blogs    = [];
+    private $postType = null;
+    private $extArgsValidation = [
         ['k', '/^[a-z\d]{32,50}$/i',       'api_key is invalid'],
         ['a', '/^dump|save|build$/',             'unkown action'],
         ['b', '/^([a-z\d_-]+\.tumblr\.com,?)+$/', 'invalid blog identifier'],
         ['t', '/^[a-z]+$/',                'invalid post type'],
     ];
-
-    protected function parseArgs($args)
-    {
-        $this->args = []; // 重置参数集合
-
-        foreach ($args as $name => $value) {
-            foreach ($this->argsValidation as $_arg) {
-                if ($name == $_arg[0] && !preg_match($_arg[1], $value)) {
-                    Helper::printlnExit($_arg[2]);
-                }
-            }
-
-            $this->args[$name] = $value;
-        }
-
-        /* apiKey */
-        if (!isset($this->args['k'])) {
-            Helper::printlnExit('Api key is not valid');
-        } else {
-            $this->apiKey = $this->args['k'];
-        }
-
-        /* 行为 */
-        if (!isset($this->args['a'])) {
-            Helper::printlnExit('Invalid action');
-        } else {
-            $this->action = $this->args['a'];
-        }
-
-        /* 处理博客设置 */
-        if (!isset($this->args['b'])) {
-            Helper::printlnExit('Blog has not been setted');
-        } else {
-            $this->blogs = explode(',', $this->args['b']);
-        }
-
-        /* 文章类型 */
-        if (isset($this->args['t'])) {
-            if (!in_array($this->args['t'], ['photo', 'video'])) {
-                Helper::printlnExit('Invalid post type');
-            }
-        }
-    }
 
     /**
      * 创建博客文件夹
@@ -214,7 +171,7 @@ class Service extends \Common\Service
         fclose($html_handle);
     }
 
-    private function dump()
+    private function dumpAction()
     {
         foreach ($this->blogs as $blog) {
             $retry_times = $this->retryTimes;
@@ -281,7 +238,7 @@ class Service extends \Common\Service
         Helper::printlnExit('All done');
     }
 
-    public function build()
+    public function buildAction()
     {
         foreach ($this->blogs as $blog) {
             $this->createBlogSaveFolder($blog);
@@ -294,7 +251,36 @@ class Service extends \Common\Service
     public function __construct($args)
     {
         parent::__construct($args);
-        $this->parseArgs($args);
+        $this->parseArgs($args, $this->extArgsValidation);
+
+        /* apiKey */
+        if (!isset($this->args['k'])) {
+            Helper::printlnExit('Api key is not valid');
+        } else {
+            $this->apiKey = $this->args['k'];
+        }
+
+        /* 行为 */
+        if (!isset($this->args['a'])) {
+            Helper::printlnExit('Invalid action');
+        } else {
+            $this->action = $this->args['a'];
+        }
+
+        /* 处理博客设置 */
+        if (!isset($this->args['b'])) {
+            Helper::printlnExit('Blog has not been setted');
+        } else {
+            $this->blogs = explode(',', $this->args['b']);
+        }
+
+        /* 文章类型 */
+        if (isset($this->args['t'])) {
+            if (!in_array($this->args['t'], ['photo', 'video'])) {
+                Helper::printlnExit('Invalid post type');
+            }
+        }
+
         $this->tumblr = new Api($this->apiKey);
         $this->tumblr->addOptions(['timeout' => 60]);
 
@@ -316,14 +302,5 @@ class Service extends \Common\Service
         $downloader->registerHook(Downloader::COMPLETE_EVENT, function($job_id, $is_skip) {
             Helper::println('Job %s is completed %s', $job_id, ($is_skip ? '[skip]' : ''));
         });
-    }
-
-    public function start()
-    {
-        $this->startTime = time();
-        call_user_func([$this, $this->args['a']]);
-        $this->endTime = time();
-
-        Helper::println('Time escaped: %s seconds', $this->endTime - $this->startTime);
     }
 }
