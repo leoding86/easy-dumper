@@ -3,13 +3,15 @@ namespace Common;
 
 abstract class Service
 {
-    protected $args           = [];
-    protected $argsValidation = [
+    private $argsValidation = [
         ['p', '/^.+$/',  'invalid proxy'],       // 代理设置
         ['s', '/^.+$/',  'invalid save path'],   // 保存路径设置
         ['r', '/^\d+$/', 'invalid retry times'], // 重试次数设置
         ['m', '/^\d+$/', 'invalid max post'],    // 下载最大数量设置
     ];
+    private $pool = null;
+
+    protected $args           = [];
     protected $saveRootDir    = null;
     protected $maxCount       = 0;
     protected $proxy          = null;
@@ -17,10 +19,16 @@ abstract class Service
     protected $startTime      = 0;
     protected $endTime        = 0;
 
-    public function __construct($args)
+    protected function parseArgs($args, $validation = null)
     {
+        $this->args = [];
+
+        if (is_null($validation)) {
+            $validation = $this->argsValidation;
+        }
+
         foreach ($args as $name => $value) {
-            foreach ($this->argsValidation as $_arg) {
+            foreach ($validation as $_arg) {
                 if ($name == $_arg[0] && !preg_match($_arg[1], $value)) {
                     Helper::printlnExit($_arg[2]);
                 }
@@ -28,6 +36,35 @@ abstract class Service
 
             $this->args[$name] = $value;
         }
+    }
+
+    protected function createPool()
+    {
+        if (!is_null($this->pool)) {
+            return;
+        }
+        $loaders = [require('./vendor/autoload.php', \Autoloader::getLoader())];
+        $this->pool = new DownloadPool(3, DownloadWorker::class, [$loaders]);
+    }
+
+    protected function submitWork(\Threaded $work)
+    {
+        $this->pool->submit($work);
+    }
+
+    protected function wait(/*int*/ $work_left = 0)
+    {
+        $this->pool->process($work_left);
+    }
+
+    protected function shutdown()
+    {
+        $this->pool->shutdown();
+    }
+
+    public function __construct($args)
+    {
+        $this->parseArgs($args);
 
         /**
          * 处理保存根路径
@@ -58,7 +95,12 @@ abstract class Service
         }
     }
 
-    abstract protected function parseArgs($args);
+    public function start()
+    {
+        $this->startTime = time();
+        call_user_func([$this, $this->action . 'Action']);
+        $this->endTime = time();
 
-    abstract public function start();
+        Helper::println('Time escaped: %s seconds', $this->endTime - $this->startTime);
+    }
 }
