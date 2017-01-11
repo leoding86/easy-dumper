@@ -24,13 +24,23 @@ namespace Service\Youtube
             $this->videoInfoUrl = sprintf($this->videoInfoUrlFormat, $this->videoId);
         }
 
-        public function __construct($arg)
+        public function __construct($arg = null)
         {
+            $this->setHeaders(['User-Agent' => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.102 Safari/537.36"]);
+
+            if (is_null($arg))
+                return;
+
             if (preg_match('/^[\da-z]$/i', $id)) {
                 $this->setVideoId($arg);
             } else {
                 $this->setPageUrl($arg);
             }
+        }
+
+        public function getVideoInfoUrl()
+        {
+            return $this->videoInfoUrl;
         }
 
         public function parseIdFromUrl(/*string*/ $url)
@@ -53,7 +63,7 @@ namespace Service\Youtube
 
         public function setVideoId(/*string*/$id)
         {
-            if (!preg_match('/^[\da-z]$/i', $id)) {
+            if (!preg_match('/^[\da-z]+$/i', $id)) {
                 throw new YoutubeException('Invalid video id ' . $id);
             }
 
@@ -82,31 +92,34 @@ namespace Service\Youtube
                  * 解析视频信息数据
                  */
                 $this->videoList = [];
-                $quanlities = [];
-                foreach (explode(',', $params) as $info) {
+                $qualities = [];
+                foreach (explode(',', $video_info['adaptive_fmts']) as $vinfo) {
+                    $info = null;
+                    parse_str($vinfo, $info);
                     $item_info = [
                         'video_id'  => $this->videoId,
-                        'quanlity'  => $info['quanlity_label'],
+                        'quality'   => !isset($info['quality_label']) ? '' : $info['quality_label'], // 音频没有质量参数
                         'type'      => substr($info['type'], 0, strpos($info['type'], '/')),
-                        'ext'       => substr($info['type'], strpos($info['type'], '/') + 1, strpos($info['type'], ';'))
+                        'ext'       => substr($info['type'], strpos($info['type'], '/') + 1, strpos($info['type'], ';') - strpos($info['type'], '/') - 1),
                         'url'       => $info['url'],
                     ];
-                    $quanlities[] = $info['quanlity_label']; // 记录质量，用于排序
+                    $this->videoList[] = $item_info;
+                    $qualities[] = !isset($info['quality_label']) ? '' : $info['quality_label']; // 记录质量，用于排序
                 }
-                $this->videoList[] = $item_info;
-                array_multisort($quanlities, SORT_DESC, SORT_NATURAL, $this->videoList); // 按照质量高到低排序
+                array_multisort($qualities, SORT_DESC, SORT_NATURAL, $this->videoList); // 按照质量高到低排序
+                return $this;
             } catch (\Exception $e) {
-                
+                throw new \Common\DumperException($e->getMessage());
             }
         }
 
         /**
          * 获得指定质量的视频信息
          * 
-         * @param  string     $quanlity video quanlity
+         * @param  string     $quality video quality
          * @return array|null
          */
-        public function getVideoInfo(/*int*/$quanlity = self::Q1080P)
+        public function getVideoInfo(/*int*/$quality = self::Q1080P)
         {
             $first_video_info = null;
             foreach ($this->videoList as $video_info) {
@@ -115,7 +128,7 @@ namespace Service\Youtube
                         $first_video_info = $video_info;
                     }
 
-                    if ($video_info['quanlity'] == strtolower($quanlity)) {
+                    if ($video_info['quality'] == strtolower($quality)) {
                         return $video_info;
                     }
                 }
