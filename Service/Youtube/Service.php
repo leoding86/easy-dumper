@@ -14,15 +14,16 @@ namespace Service\Youtube
     {
         private $youtube  = null;
         private $saveDir  = null;
-        private $action   = null;
         private $channels = null;
         private $urls     = null;
         private $ids      = null;
-        private $quanlity = Youtube::Q1080P;
+        private $quality  = Youtube::Q1080P;
+        private $type     = 'mp4';
         private $extArgsValidation = [
-            ['a', '/^download|dump|save|build$/', 'unkown action'],
+            ['a', '/^download|dump|save$/', 'unkown action'],
             ['u', '/^(?:https:\/\/(?:youtu\.be|w{3}\.youtube\.com),?)+/i', 'invalid video url(s)'],
             ['i', '/^(?:[a-z\d]+,?)+$/i', 'invalid video id(s)'],
+            ['t', '/webm|mp4/', 'invalid video type'],
             ['q', '.+', ''],
             ['c', '.+', ''],
         ];
@@ -48,7 +49,7 @@ namespace Service\Youtube
             }
 
             if (isset($this->args['q'])) {
-                $this->quanlity = $this->args['q'];
+                $this->quality = $this->args['q'];
             }
 
             if (isset($this->args['c'])) {
@@ -58,7 +59,7 @@ namespace Service\Youtube
             $this->youtube = new Youtube();
 
             if ($this->proxy) {
-                $this->youtube->addOption(['proxy' => $this->proxy]);
+                $this->youtube->addOptions(['proxy' => $this->proxy]);
             }
         }
 
@@ -82,36 +83,28 @@ namespace Service\Youtube
                 while ($retry_times-- > 0) {
                     Helper::println('Try to get video info, id -> ' . $id);
                     try {
-                        $video_info = $this->youtube->setVideoId($id)->getVideoInfo($this->quanlity);
+                        $video_info = $this->youtube->setVideoId($id)->fliteVideoInfo()->getVideoInfo($this->quality);
                         if (!$video_info) {
-                            Helper::println('Cannot get video info, id -> ' . $id);
+                            Helper::println('Cannot get video info, url -> ' . $this->youtube->getVideoInfoUrl());
                             continue 2;
                         }
+                        break;
                     } catch (YoutubeException $e) {
                         Helper::println($e->getMessage());
                         continue 2;
                     }
                 }
 
-                $download_task = new DownloadTask(
-                    $video_info['video_id'],
-                    $this->saveRootDir,
-                    $video_info['video_id'] . '.' . $video_info['ext'],
-                    $video_info['url']
+                /**
+                 * 创建下载工作
+                 */
+                $download_work = new DownloadWork(
+                    $video_info, 
+                    $this->saveRootDir, 
+                    $this->youtube->headers, 
+                    $this->youtube->options
                 );
-                $downloader = new Downloader($download_task, $this->youtube->headers, $this->youtube->options);
-                $downloader->setChunkSize(1024 * 20);
-                $download_work = new DownloadWork($downloader);
-                $download_work->setDownloadOptions()
-                              ->registerHook(Downloader::BEFORE_EVENT, function($job_id, $total_size, $url) {
-                                    Helper::println('Job %s total size: %s bytes [%s]', $job_id, $total_size, $url);
-                              })
-                              ->registerHook(Downloader::PROCESS_EVENT, function($job_id, $completed_size, total_size) {
-                                    Helper::println('Job %s is complete %f%%', $job_id, $completed_size / $total_size * 100);
-                              })
-                              ->registerHook(Downloader::COMPLETE_EVENT, function($job_id, $is_skip) {
-                                    Helper::println('Job %s is completed %s', $job_id, ($is_skip ? '[skip]' : ''));
-                              });
+                
                 $this->submitWork($download_work);
                 $this->wait();
             }
@@ -123,17 +116,14 @@ namespace Service\Youtube
 
         public function dumpAction()
         {
-
+            Helper::println('Not implemented');
+            throw new DumperException('Not implemented');
         }
 
         public function saveAction()
         {
-
-        }
-
-        public function buildAction()
-        {
-
+            Helper::println('Not implemented');
+            throw new DumperException('Not implemented');
         }
     }
 }
