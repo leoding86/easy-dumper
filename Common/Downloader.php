@@ -58,15 +58,6 @@ class Downloader
         return $this->retryCount-- > 0;
     }
 
-    private function dispatch($event, $arguments = [])
-    {
-        if (isset($this->events[$event])) {
-            foreach ($this->events[$event] as $hook) {
-                call_user_func_array($hook, $arguments);
-            }
-        }
-    }
-
     public function __construct(
         DownloadTask $task,
         $headers   = [],
@@ -156,6 +147,16 @@ class Downloader
         }
 
         $this->events[$event][] = $hook;
+        return $this;
+    }
+
+    private function dispatch($event, $arguments = [])
+    {
+        if (isset($this->events[$event])) {
+            foreach ($this->events[$event] as $hook) {
+                call_user_func_array($hook, $arguments);
+            }
+        }
     }
 
     public function getSavedFile()
@@ -187,7 +188,7 @@ class Downloader
                 try {
                     $request = \Requests::head($this->resourceUri, $this->headers, $this->options);
                     if ($request->status_code != 200) {
-                        throw new DumperException('Cannot get resource head');
+                        throw new DumperException('Cannot get resource head. url->' . $this->resourceUri);
                     }
                     $size = $request->headers['content-length'];
                     $this->dispatch(self::BEFORE_EVENT, [$this->jobId, $size, $this->resourceUri]);
