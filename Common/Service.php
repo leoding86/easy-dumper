@@ -16,6 +16,7 @@ abstract class Service
     protected $maxCount       = 0;
     protected $proxy          = null;
     protected $retryTimes     = 3;
+    protected $action         = null;
     protected $startTime      = 0;
     protected $endTime        = 0;
 
@@ -43,7 +44,7 @@ abstract class Service
         if (!is_null($this->pool)) {
             return;
         }
-        $loaders = [require('./vendor/autoload.php', \Autoloader::getLoader())];
+        $loaders = [require('./vendor/autoload.php'), \Autoloader::getLoader()];
         $this->pool = new DownloadPool(3, DownloadWorker::class, [$loaders]);
     }
 
