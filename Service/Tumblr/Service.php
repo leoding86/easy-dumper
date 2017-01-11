@@ -14,7 +14,6 @@ class Service extends \Common\Service
     private $tumblr   = null;
     private $saveDir  = null;
     private $apiKey   = null;
-    private $action   = null;
     private $blogs    = [];
     private $postType = null;
     private $extArgsValidation = [
@@ -171,7 +170,7 @@ class Service extends \Common\Service
         fclose($html_handle);
     }
 
-    private function dumpAction()
+    public function dumpAction()
     {
         foreach ($this->blogs as $blog) {
             $retry_times = $this->retryTimes;
