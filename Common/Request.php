@@ -5,11 +5,33 @@ namespace Common
     {
         public $params    = [];
         public $options = [];
-        public $header  = [];
+        public $headers  = [];
 
         public function setParams($params)
         {
             $this->params = $params;
+            return $this;
+        }
+
+        public function setHeaders(array $headers)
+        {
+            $this->headers = $headers;
+            return $this;
+        }
+
+        public function addHeaders(array $headers)
+        {
+            $this->headers = array_merge($this->headers, $headers);
+            return $this;
+        }
+
+        public function removeHeaders(array $header_names)
+        {
+            foreach ($this->headers as $name => $value) {
+                if (in_array($name, $header_names)) {
+                    unset($this->headers[$name]);
+                }
+            }
             return $this;
         }
 
